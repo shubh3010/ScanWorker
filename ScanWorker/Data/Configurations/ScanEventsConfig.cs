@@ -1,0 +1,33 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ScanWorker.Constants;
+using ScanWorker.Data.Models;
+
+namespace ScanWorker.Data.Configurations;
+
+public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvents>
+{
+    public void Configure(EntityTypeBuilder<ScanEvents> builder)
+    {
+            builder.ToTable("ScanEvents");
+            builder.HasKey(e => e.EventId);
+            
+            builder.Property(e => e.Type).IsRequired().HasMaxLength(DatabaseConstants.EventTypeMaxLength);
+            builder.Property(e => e.UserId).HasMaxLength(DatabaseConstants.UserIdMaxLength);
+            builder.Property(e => e.RunId).HasMaxLength(DatabaseConstants.RunIdMaxLength);
+            builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Indexes
+            builder.HasIndex(e => e.ParcelId)
+                .HasDatabaseName("IX_ScanEvents_ParcelId");
+
+            builder.HasIndex(e => e.CreatedDateTimeUtc)
+                .HasDatabaseName("IX_ScanEvents_CreatedDateTimeUtc");
+
+            // Relationships
+            builder.HasOne(e => e.User)
+                .WithMany(u => u.ScanEvents)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+    }
+}
