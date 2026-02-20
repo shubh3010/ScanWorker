@@ -31,6 +31,11 @@ public class MockHttpMessageHandler : HttpMessageHandler
         return new MockHttpMessageHandler(HttpStatusCode.OK, "{ invalid json }}}");
     }
 
+    public static MockHttpMessageHandler WithRawJson(string json)
+    {
+        return new MockHttpMessageHandler(HttpStatusCode.OK, json);
+    }
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var response = new HttpResponseMessage(_statusCode)

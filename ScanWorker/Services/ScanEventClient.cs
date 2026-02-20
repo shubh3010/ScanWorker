@@ -19,14 +19,16 @@ public class ScanEventClient(HttpClient httpClient, ILogger<ScanEventClient> log
         {
             logger.LogDebug("Fetching scan events from EventId {FromEventId} with limit {Limit}", fromEventId, limit);
 
-            var result = await httpClient.GetFromJsonAsync<List<ScanEventResponseDto>>(
-                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}",
-                JsonOptions,
-                ct);
+            var jsonArray = await httpClient.GetFromJsonAsync<List<JsonElement>>(
+                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}", ct);
 
-            var events = result ?? (IReadOnlyList<ScanEventResponseDto>)[];
+            if (jsonArray is null || jsonArray.Count == 0)
+                return [];
 
-            logger.LogInformation("Retrieved {Count} scan events starting from EventId {FromEventId}", events.Count, fromEventId);
+            var events = DeserializeEvents(jsonArray);
+
+            logger.LogInformation("Retrieved {Count}/{Total} scan events starting from EventId {FromEventId}",
+                events.Count, jsonArray.Count, fromEventId);
 
             return events;
         }
@@ -41,5 +43,26 @@ public class ScanEventClient(HttpClient httpClient, ILogger<ScanEventClient> log
             logger.LogError(ex, "Failed to deserialize scan events response from EventId {FromEventId}", fromEventId);
             throw;
         }
+    }
+
+    private List<ScanEventResponseDto> DeserializeEvents(List<JsonElement> jsonArray)
+    {
+        var events = new List<ScanEventResponseDto>();
+
+        foreach (var element in jsonArray)
+        {
+            try
+            {
+                var scanEvent = element.Deserialize<ScanEventResponseDto>(JsonOptions);
+                if (scanEvent is not null)
+                    events.Add(scanEvent);
+            }
+            catch (JsonException ex)
+            {
+                logger.LogWarning(ex, "Skipping malformed scan event: {RawJson}", element.GetRawText());
+            }
+        }
+
+        return events;
     }
 }

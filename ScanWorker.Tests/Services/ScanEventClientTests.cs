@@ -139,6 +139,46 @@ public class ScanEventClientTests
     }
 
     [Fact]
+    public async Task GetScanEventsAsync_SkipsMalformedEvent_AndReturnsValidOnes()
+    {
+        // Arrange — one valid event, one malformed, one valid
+        var json = """
+        [
+            {
+                "EventId": 100,
+                "ParcelId": 5002,
+                "Type": "Pickup",
+                "CreatedDateTimeUtc": "2026-02-21T00:00:00Z",
+                "Device": { "DeviceId": 103, "DeviceTransactionId": "83269" },
+                "User": { "UserId": "NC1001", "CarrierId": "NC", "RunId": "100" }
+            },
+            {
+                "EventId": 101,
+                "bad_field": true
+            },
+            {
+                "EventId": 102,
+                "ParcelId": 5003,
+                "Type": "Delivery",
+                "CreatedDateTimeUtc": "2026-02-21T01:00:00Z",
+                "Device": { "DeviceId": 104, "DeviceTransactionId": "83270" },
+                "User": { "UserId": "NC1002", "CarrierId": "NC", "RunId": "101" }
+            }
+        ]
+        """;
+        var handler = MockHttpMessageHandler.WithRawJson(json);
+        var client = CreateClient(handler);
+
+        // Act
+        var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result[0].EventId.Should().Be(100);
+        result[1].EventId.Should().Be(102);
+    }
+
+    [Fact]
     public async Task GetScanEventsAsync_ThrowsOperationCanceledException_WhenCancelled()
     {
         // Arrange
