@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
+using ScanWorker.Constants;
 using ScanWorker.Data.Models;
 using ScanWorker.Dtos;
-using ScanWorker.Enums;
 using ScanWorker.Interface;
 using ScanWorker.Repository;
 
@@ -40,35 +40,53 @@ public class ScanEventProcessorService(
             events.Count, lastProcessedEvent.LastProcessedEventId + 1);
 
         var orderedEvents = events.OrderBy(e => e.EventId).ToImmutableList();
+
+        var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEvents.Select(e => e.EventId), ct);
+
         foreach (var scanEvent in orderedEvents)
         {
-            await ProcessSingleEventAsync(scanEvent, ct);
+            if (existingEventIds.Contains(scanEvent.EventId))
+            {
+                logger.LogDebug("Skipping duplicate EventId {EventId} — already processed", scanEvent.EventId);
+                lastProcessedEvent.LastProcessedEventId = scanEvent.EventId;
+                continue;
+            }
+
+            try
+            {
+                await ProcessSingleEventAsync(scanEvent, ct);
+                lastProcessedEvent.LastProcessedEventId = scanEvent.EventId;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to process EventId {EventId} — stopping batch at this point", scanEvent.EventId);
+                break;
+            }
         }
 
-        lastProcessedEvent.LastProcessedEventId = orderedEvents[^1].EventId;
         lastProcessedEvent.UpdatedAt = DateTime.UtcNow;
-        
         await eventProcessingStateRepository.SaveChangesAsync(ct);
         
         return true;
     }
 
-    private async Task ProcessSingleEventAsync(ScanEventResponseDto scanEvent,CancellationToken ct)
+    private async Task ProcessSingleEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
     {
+
         // Step 1: Upsert User (no FK dependency)
-        await UpsertUserAsync(scanEvent.User, ct);
+        await AddUserAsync(scanEvent.User, ct);
 
         // Step 2: Upsert Parcel (depends on User)
         await UpsertParcelAsync(scanEvent, ct);
 
         // Step 3: Insert ScanEvent (depends on User and Parcel)
-        InsertScanEventAsync(scanEvent, ct);
+        AddScanEventAsync(scanEvent, ct);
 
         logger.LogDebug("Processed EventId {EventId} for ParcelId {ParcelId}",
             scanEvent.EventId, scanEvent.ParcelId);
     }
 
-    private async Task UpsertUserAsync(ScanEventUserDto userDto, CancellationToken ct)
+    private async Task AddUserAsync(ScanEventUserDto userDto, CancellationToken ct)
     {
         var userExists = await userRepository.ExistsByUserIdAsync(userDto.UserId, ct);
 
@@ -121,20 +139,20 @@ public class ScanEventProcessorService(
         }
     }
 
-    private static void SetParcelTimestamps(Parcels parcel, EventType eventType, DateTime createdDateTimeUtc)
+    private static void SetParcelTimestamps(Parcels parcel, string eventType, DateTime createdDateTimeUtc)
     {
-        switch (eventType)
+        switch (eventType.ToUpperInvariant())
         {
-            case EventType.Pickup:
+            case EventTypeConstants.Pickup:
                 parcel.PickupDateTimeUtc = createdDateTimeUtc;
                 break;
-            case EventType.Delivery:
+            case EventTypeConstants.Delivery:
                 parcel.DeliveryDateTimeUtc = createdDateTimeUtc;
                 break;
         }
     }
 
-    private void InsertScanEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
+    private void AddScanEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
     {
         scanEventRepository.Add(new ScanEvents
         {

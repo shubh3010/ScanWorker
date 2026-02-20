@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ScanWorker.Constants;
 using ScanWorker.Data.Models;
@@ -13,6 +13,7 @@ public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvents>
             builder.HasKey(e => e.EventId);
             
             builder.Property(e => e.Type).IsRequired().HasMaxLength(DatabaseConstants.EventTypeMaxLength);
+            builder.Property(e => e.StatusCode).HasMaxLength(DatabaseConstants.StatusCodeMaxLength);
             builder.Property(e => e.UserId).HasMaxLength(DatabaseConstants.UserIdMaxLength);
             builder.Property(e => e.RunId).HasMaxLength(DatabaseConstants.RunIdMaxLength);
             builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");

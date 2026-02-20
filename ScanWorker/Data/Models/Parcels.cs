@@ -1,16 +1,14 @@
-﻿using ScanWorker.Enums;
-
-namespace ScanWorker.Data.Models;
+﻿namespace ScanWorker.Data.Models;
 
 public class Parcels
 {
     public int ParcelId  { get; set; }
-    
+
     public long LastEventId { get; set; }
+
+    public string LastEventType { get; set; } = null!;
     
-    public EventType LastEventType { get; set; }
-    
-    public StatusCode? LastEventStatusCode { get; set; }
+    public string? LastEventStatusCode { get; set; }
     
     public DateTime LastEventCreatedDateTimeUtc { get; set; }
     

@@ -13,6 +13,8 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("ScanEventWorker started");
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -21,6 +23,11 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
                 var processor = scope.ServiceProvider.GetRequiredService<IScanEventProcessor>();
 
                 var hasWork = await processor.ProcessBatchAsync(stoppingToken);
+
+                if (hasWork)
+                {
+                    logger.LogInformation("Batch processed successfully");
+                }
 
                 ResetRetryCount();
 
@@ -40,6 +47,8 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
                     break;
             }
         }
+
+        logger.LogInformation("ScanEventWorker stopped");
     }
 
     private async Task<bool> HandleRetryAsync(Exception ex, CancellationToken ct)
@@ -61,5 +70,8 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
         return true;
     }
 
-    private void ResetRetryCount() => _retryCount = 0;
+    private void ResetRetryCount()
+    {
+        _retryCount = 0;
+    }
 }

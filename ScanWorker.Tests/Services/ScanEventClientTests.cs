@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ScanWorker.Dtos;
-using ScanWorker.Enums;
 using ScanWorker.Services;
 using ScanWorker.Tests.Helpers;
 
@@ -33,7 +32,7 @@ public class ScanEventClientTests
             {
                 EventId = 100,
                 ParcelId = 5002,
-                Type = EventType.Pickup,
+                Type = "Pickup",
                 CreatedDateTimeUtc = DateTime.UtcNow,
                 Device = new ScanEventDeviceDto
                 {
@@ -65,7 +64,7 @@ public class ScanEventClientTests
         result.Should().HaveCount(1);
         result[0].EventId.Should().Be(100);
         result[0].ParcelId.Should().Be(5002);
-        result[0].Type.Should().Be(EventType.Pickup);
+        result[0].Type.Should().Be("Pickup");
         result[0].User.UserId.Should().Be("NC1001");
     }
 

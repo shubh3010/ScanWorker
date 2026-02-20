@@ -8,6 +8,11 @@ namespace ScanWorker.Services;
 
 public class ScanEventClient(HttpClient httpClient, ILogger<ScanEventClient> logger) : IScanEventClient
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public async Task<IReadOnlyList<ScanEventResponseDto>> GetScanEventsAsync(long fromEventId, int limit, CancellationToken ct)
     {
         try
@@ -15,7 +20,9 @@ public class ScanEventClient(HttpClient httpClient, ILogger<ScanEventClient> log
             logger.LogDebug("Fetching scan events from EventId {FromEventId} with limit {Limit}", fromEventId, limit);
 
             var result = await httpClient.GetFromJsonAsync<List<ScanEventResponseDto>>(
-                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}", ct);
+                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}",
+                JsonOptions,
+                ct);
 
             var events = result ?? (IReadOnlyList<ScanEventResponseDto>)[];
 

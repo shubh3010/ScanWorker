@@ -1,18 +1,16 @@
-﻿using ScanWorker.Enums;
-
-namespace ScanWorker.Data.Models;
+﻿namespace ScanWorker.Data.Models;
 
 public class ScanEvents
 {
     public long EventId { get; set; }
-    
+
     public int ParcelId { get; set; }
-    
-    public EventType Type { get; set; }
+
+    public string Type { get; set; } = null!;
     
     public DateTime CreatedDateTimeUtc { get; set; }
     
-    public StatusCode? StatusCode { get; set; }
+    public string? StatusCode { get; set; }
     
     public string? RunId { get; set; }
 
