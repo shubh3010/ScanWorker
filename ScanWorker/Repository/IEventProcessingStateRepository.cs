@@ -5,6 +5,6 @@ namespace ScanWorker.Repository;
 
 public interface IEventProcessingStateRepository : IRepository<EventProcessingState>
 {
-    Task<EventProcessingState> GetAsync(CancellationToken ct = default);
+    Task<EventProcessingState?> GetAsync(CancellationToken ct = default);
 }
 

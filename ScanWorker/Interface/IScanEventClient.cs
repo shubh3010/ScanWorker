@@ -1,6 +1,4 @@
 using ScanWorker.Dtos;
-using ScanWorker.Interface;
-
 namespace ScanWorker.Interface;
 
 public interface IScanEventClient

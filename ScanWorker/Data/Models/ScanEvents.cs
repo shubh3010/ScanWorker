@@ -20,7 +20,7 @@ public class ScanEvents
     
     public int? DeviceId { get; set; }
     
-    public long? DeviceTransactionId { get; set; }
+    public string? DeviceTransactionId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
