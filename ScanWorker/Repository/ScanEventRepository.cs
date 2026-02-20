@@ -5,9 +5,9 @@ using ScanWorker.Repository;
 
 namespace ScanWorker.Respository;
 
-public class ScanEventRepository(ScanWorkerContext context) : Repository<ScanEvents>(context), IScanEventRepository
+public class ScanEventRepository(ScanWorkerContext context) : Repository<ScanEvent>(context), IScanEventRepository
 {
-    public async Task<ScanEvents?> GetByEventIdAsync(long eventId, CancellationToken ct = default)
+    public async Task<ScanEvent?> GetByEventIdAsync(long eventId, CancellationToken ct = default)
     {
         return await _dbSet
             .AsNoTracking()

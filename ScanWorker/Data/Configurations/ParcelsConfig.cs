@@ -5,9 +5,9 @@ using ScanWorker.Data.Models;
 
 namespace ScanWorker.Data.Configurations;
 
-public class ParcelsConfig : IEntityTypeConfiguration<Parcels>
+public class ParcelsConfig : IEntityTypeConfiguration<Parcel>
 {
-    public void Configure(EntityTypeBuilder<Parcels> builder)
+    public void Configure(EntityTypeBuilder<Parcel> builder)
     {
         builder.ToTable("Parcels");
         builder.HasKey(p => p.ParcelId);

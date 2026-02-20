@@ -5,9 +5,9 @@ using ScanWorker.Data.Models;
 
 namespace ScanWorker.Data.Configurations;
 
-public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvents>
+public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvent>
 {
-    public void Configure(EntityTypeBuilder<ScanEvents> builder)
+    public void Configure(EntityTypeBuilder<ScanEvent> builder)
     {
             builder.ToTable("ScanEvents");
             builder.HasKey(e => e.EventId);

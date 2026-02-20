@@ -8,9 +8,9 @@ public class ScanWorkerContext : DbContext
 {
     public ScanWorkerContext(DbContextOptions<ScanWorkerContext> options) : base(options) { }
     
-    public DbSet<EventProcessingState> ScanUsers => Set<EventProcessingState>();
-    public DbSet<Parcels> Parcels => Set<Parcels>();
-    public DbSet<ScanEvents> ScanEvents => Set<ScanEvents>();
+    public DbSet<EventProcessingState> EventProcessingStates => Set<EventProcessingState>();
+    public DbSet<Parcel> Parcels => Set<Parcel>();
+    public DbSet<ScanEvent> ScanEvents => Set<ScanEvent>();
     public DbSet<User> Users => Set<User>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

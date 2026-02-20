@@ -2,8 +2,8 @@ using ScanWorker.Data.Models;
 
 namespace ScanWorker.Repository;
 
-public interface IParcelRepository : IRepository<Parcels>
+public interface IParcelRepository : IRepository<Parcel>
 {
-    Task<Parcels?> GetByParcelIdAsync(int parcelId, CancellationToken ct = default);
+    Task<Parcel?> GetByParcelIdAsync(int parcelId, CancellationToken ct = default);
 }
 

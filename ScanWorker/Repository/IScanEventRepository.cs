@@ -2,9 +2,9 @@ using ScanWorker.Data.Models;
 
 namespace ScanWorker.Repository;
 
-public interface IScanEventRepository : IRepository<ScanEvents>
+public interface IScanEventRepository : IRepository<ScanEvent>
 {
-    Task<ScanEvents?> GetByEventIdAsync(long eventId, CancellationToken ct = default);
+    Task<ScanEvent?> GetByEventIdAsync(long eventId, CancellationToken ct = default);
     Task<HashSet<long>> GetExistingEventIdsAsync(IEnumerable<long> eventIds, CancellationToken ct = default);
 }
 

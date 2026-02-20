@@ -7,7 +7,6 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
 {
     private const int MaxRetryCount = 3;
     private const int BaseDelaySeconds = 5;
-    private const int EmptyBatchDelaySeconds = 5;
 
     private int _retryCount;
 
@@ -33,8 +32,8 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
 
                 if (!hasWork)
                 {
-                    logger.LogDebug("No new scan events found. Waiting {Delay}s before next poll", EmptyBatchDelaySeconds);
-                    await Task.Delay(TimeSpan.FromSeconds(EmptyBatchDelaySeconds), stoppingToken);
+                    logger.LogDebug("No new scan events found. Waiting {Delay}s before next poll", BaseDelaySeconds);
+                    await Task.Delay(TimeSpan.FromSeconds(BaseDelaySeconds), stoppingToken);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

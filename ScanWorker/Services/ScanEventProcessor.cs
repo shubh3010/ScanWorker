@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using ScanWorker.Constants;
 using ScanWorker.Data.Models;
 using ScanWorker.Dtos;
@@ -39,7 +38,7 @@ public class ScanEventProcessorService(
         logger.LogInformation("Processing {Count} events starting from EventId {FromEventId}",
             events.Count, lastProcessedEvent.LastProcessedEventId + 1);
 
-        var orderedEvents = events.OrderBy(e => e.EventId).ToImmutableList();
+        var orderedEvents = events.OrderBy(e => e.EventId).ToList();
 
         var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEvents.Select(e => e.EventId), ct);
 
@@ -80,7 +79,7 @@ public class ScanEventProcessorService(
         await UpsertParcelAsync(scanEvent, ct);
 
         // Step 3: Insert ScanEvent (depends on User and Parcel)
-        AddScanEventAsync(scanEvent, ct);
+        AddScanEvent(scanEvent, ct);
 
         logger.LogDebug("Processed EventId {EventId} for ParcelId {ParcelId}",
             scanEvent.EventId, scanEvent.ParcelId);
@@ -108,7 +107,7 @@ public class ScanEventProcessorService(
 
         if (existingParcel is null)
         {
-            var parcel = new Parcels
+            var parcel = new Parcel
             {
                 ParcelId = scanEvent.ParcelId,
                 LastEventId = scanEvent.EventId,
@@ -132,14 +131,15 @@ public class ScanEventProcessorService(
             existingParcel.LastEventCreatedDateTimeUtc = scanEvent.CreatedDateTimeUtc;
             existingParcel.LastRunId = scanEvent.User.RunId;
             existingParcel.UserId = scanEvent.User.UserId;
+            existingParcel.UpdatedAt = DateTime.UtcNow;
 
             SetParcelTimestamps(existingParcel, scanEvent.Type, scanEvent.CreatedDateTimeUtc);
-            
+
             logger.LogDebug("Updated Parcel {ParcelId}", scanEvent.ParcelId);
         }
     }
 
-    private static void SetParcelTimestamps(Parcels parcel, string eventType, DateTime createdDateTimeUtc)
+    private static void SetParcelTimestamps(Parcel parcel, string eventType, DateTime createdDateTimeUtc)
     {
         switch (eventType.ToUpperInvariant())
         {
@@ -152,9 +152,9 @@ public class ScanEventProcessorService(
         }
     }
 
-    private void AddScanEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
+    private void AddScanEvent(ScanEventResponseDto scanEvent, CancellationToken ct)
     {
-        scanEventRepository.Add(new ScanEvents
+        scanEventRepository.Add(new ScanEvent
         {
             EventId = scanEvent.EventId,
             ParcelId = scanEvent.ParcelId,

@@ -1,6 +1,6 @@
-﻿namespace ScanWorker.Data.Models;
+namespace ScanWorker.Data.Models;
 
-public class Parcels
+public class Parcel
 {
     public int ParcelId  { get; set; }
 
@@ -23,7 +23,7 @@ public class Parcels
     public string UserId { get; set; } = null!;
     
     // Navigation property
-    public List<ScanEvents>? ScanEvents { get; set; }
+    public virtual List<ScanEvent>? ScanEvents { get; set; }
     
-    public User? User { get; set; }
+    public virtual User? User { get; set; }
 }

@@ -9,7 +9,7 @@ public class User
     public DateTime CreatedAt { get; set; }
     
     // Navigation property
-    public List<Parcels>? Parcels { get; set; }
+    public virtual List<Parcel>? Parcels { get; set; }
     
-    public List<ScanEvents>? ScanEvents { get; set; }
+    public virtual List<ScanEvent>? ScanEvents { get; set; }
 }

@@ -43,7 +43,7 @@ namespace ScanWorker.Migrations
                     b.ToTable("EventProcessingState", (string)null);
                 });
 
-            modelBuilder.Entity("ScanWorker.Data.Models.Parcels", b =>
+            modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
                 {
                     b.Property<int>("ParcelId")
                         .ValueGeneratedOnAdd()
@@ -91,7 +91,7 @@ namespace ScanWorker.Migrations
                     b.ToTable("Parcels", (string)null);
                 });
 
-            modelBuilder.Entity("ScanWorker.Data.Models.ScanEvents", b =>
+            modelBuilder.Entity("ScanWorker.Data.Models.ScanEvent", b =>
                 {
                     b.Property<long>("EventId")
                         .ValueGeneratedOnAdd()
@@ -107,7 +107,7 @@ namespace ScanWorker.Migrations
                     b.Property<DateTime>("CreatedDateTimeUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DeviceId")
+                    b.Property<int>("DeviceId")
                         .HasColumnType("int");
 
                     b.Property<string>("DeviceTransactionId")
@@ -167,7 +167,7 @@ namespace ScanWorker.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("ScanWorker.Data.Models.Parcels", b =>
+            modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
                 {
                     b.HasOne("ScanWorker.Data.Models.User", "User")
                         .WithMany("Parcels")
@@ -178,9 +178,9 @@ namespace ScanWorker.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ScanWorker.Data.Models.ScanEvents", b =>
+            modelBuilder.Entity("ScanWorker.Data.Models.ScanEvent", b =>
                 {
-                    b.HasOne("ScanWorker.Data.Models.Parcels", "Parcel")
+                    b.HasOne("ScanWorker.Data.Models.Parcel", "Parcel")
                         .WithMany("ScanEvents")
                         .HasForeignKey("ParcelId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -197,7 +197,7 @@ namespace ScanWorker.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ScanWorker.Data.Models.Parcels", b =>
+            modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
                 {
                     b.Navigation("ScanEvents");
                 });

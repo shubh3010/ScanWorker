@@ -1,6 +1,6 @@
 ﻿namespace ScanWorker.Data.Models;
 
-public class ScanEvents
+public class ScanEvent
 {
     public long EventId { get; set; }
 
@@ -16,14 +16,14 @@ public class ScanEvents
 
     public string UserId { get; set; } = null!;
     
-    public int? DeviceId { get; set; }
+    public int DeviceId { get; set; }
     
     public string? DeviceTransactionId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     // Navigation property
-    public User? User { get; set; }
+    public virtual User? User { get; set; }
     
-    public Parcels? Parcel { get; set; }
+    public virtual Parcel? Parcel { get; set; }
 }
