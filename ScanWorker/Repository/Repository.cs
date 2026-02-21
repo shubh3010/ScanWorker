@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Repository;
+﻿﻿using Microsoft.EntityFrameworkCore;
+using ScanWorker.Data;
 
 namespace ScanWorker.Repository;
 

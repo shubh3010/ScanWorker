@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using ScanWorker.Constants;
-using ScanWorker.Dtos;
+using ScanWorker.Dto;
 using ScanWorker.Interface;
 
 namespace ScanWorker.Services;
@@ -19,16 +19,16 @@ public class ScanEventClient(HttpClient httpClient, ILogger<ScanEventClient> log
         {
             logger.LogDebug("Fetching scan events from EventId {FromEventId} with limit {Limit}", fromEventId, limit);
 
-            var jsonArray = await httpClient.GetFromJsonAsync<List<JsonElement>>(
-                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}", ct);
+            var response = await httpClient.GetFromJsonAsync<ScanEventsWrapperDto>(
+                $"{ApiConstants.ScanEventsEndpoint}?FromEventId={fromEventId}&Limit={limit}", JsonOptions, ct);
 
-            if (jsonArray is null || jsonArray.Count == 0)
+            if (response?.ScanEvents is null || response.ScanEvents.Count == 0)
                 return [];
 
-            var events = DeserializeEvents(jsonArray);
+            var events = DeserializeEvents(response.ScanEvents);
 
             logger.LogInformation("Retrieved {Count}/{Total} scan events starting from EventId {FromEventId}",
-                events.Count, jsonArray.Count, fromEventId);
+                events.Count, response.ScanEvents.Count, fromEventId);
 
             return events;
         }

@@ -12,15 +12,9 @@ public class ParcelsConfig : IEntityTypeConfiguration<Parcel>
         builder.ToTable("Parcels");
         builder.HasKey(p => p.ParcelId);
 
-        builder.Property(p => p.UserId).IsRequired().HasMaxLength(DatabaseConstants.UserIdMaxLength);
-        builder.Property(p => p.LastRunId).HasMaxLength(DatabaseConstants.RunIdMaxLength);
         builder.Property(p => p.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
         // Relationships
-        builder.HasOne(p => p.User)
-            .WithMany(u => u.Parcels)
-            .HasForeignKey(f => f.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasMany(p => p.ScanEvents)
             .WithOne(s => s.Parcel)

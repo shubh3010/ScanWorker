@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Repository;
+using ScanWorker.Data;
 
 #nullable disable
 
@@ -51,42 +51,12 @@ namespace ScanWorker.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParcelId"));
 
-                    b.Property<DateTime?>("DeliveryDateTimeUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("LastEventCreatedDateTimeUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("LastEventId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("LastEventStatusCode")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastEventType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastRunId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("PickupDateTimeUtc")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("ParcelId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Parcels", (string)null);
                 });
@@ -110,8 +80,8 @@ namespace ScanWorker.Migrations
                     b.Property<int>("DeviceId")
                         .HasColumnType("int");
 
-                    b.Property<string>("DeviceTransactionId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("DeviceTransactionId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ParcelId")
                         .HasColumnType("int");
@@ -142,40 +112,7 @@ namespace ScanWorker.Migrations
                     b.HasIndex("ParcelId")
                         .HasDatabaseName("IX_ScanEvents_ParcelId");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("ScanEvents", (string)null);
-                });
-
-            modelBuilder.Entity("ScanWorker.Data.Models.User", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CarrierId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("Users", (string)null);
-                });
-
-            modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
-                {
-                    b.HasOne("ScanWorker.Data.Models.User", "User")
-                        .WithMany("Parcels")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ScanWorker.Data.Models.ScanEvent", b =>
@@ -186,26 +123,11 @@ namespace ScanWorker.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("ScanWorker.Data.Models.User", "User")
-                        .WithMany("ScanEvents")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.Navigation("Parcel");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
                 {
-                    b.Navigation("ScanEvents");
-                });
-
-            modelBuilder.Entity("ScanWorker.Data.Models.User", b =>
-                {
-                    b.Navigation("Parcels");
-
                     b.Navigation("ScanEvents");
                 });
 #pragma warning restore 612, 618

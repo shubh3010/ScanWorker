@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Repository;
 using ScanWorker.Configuration;
+using ScanWorker.Data;
 using ScanWorker.Interface;
 using ScanWorker.Repository;
 using ScanWorker.Services;
@@ -25,7 +25,6 @@ builder.Services.AddHttpClient<IScanEventClient, ScanEventClient>((sp, client) =
 builder.Services.AddScoped<IEventProcessingStateRepository, EventProcessingStateRepository>();
 builder.Services.AddScoped<IScanEventRepository, ScanEventRepository>();
 builder.Services.AddScoped<IParcelRepository, ParcelRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
 builder.Services.AddScoped<IScanEventProcessor, ScanEventProcessorService>();

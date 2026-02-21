@@ -1,24 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Repository
+namespace ScanWorker.Data;
+
+public class ScanWorkerContextFactory : IDesignTimeDbContextFactory<ScanWorkerContext>
 {
-    public class ScanWorkerContextFactory : IDesignTimeDbContextFactory<ScanWorkerContext>
+    public ScanWorkerContext CreateDbContext(string[] args)
     {
-        public ScanWorkerContext CreateDbContext(string[] args)
-        {
-            // Build config manually since Program.cs DI is not available
-            IConfigurationRoot config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false)
-                .Build();
+        // Build config manually since Program.cs DI is not available
+        IConfigurationRoot config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build();
 
-            var optionsBuilder = new DbContextOptionsBuilder<ScanWorkerContext>();
-            var connectionString = config.GetConnectionString("DefaultConnection");
+        var optionsBuilder = new DbContextOptionsBuilder<ScanWorkerContext>();
+        var connectionString = config.GetConnectionString("DefaultConnection");
 
-            optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.UseSqlServer(connectionString);
 
-            return new ScanWorkerContext(optionsBuilder.Options);
-        }
+        return new ScanWorkerContext(optionsBuilder.Options);
     }
 }

@@ -1,6 +1,6 @@
 using ScanWorker.Constants;
 using ScanWorker.Data.Models;
-using ScanWorker.Dtos;
+using ScanWorker.Dto;
 using ScanWorker.Interface;
 using ScanWorker.Repository;
 
@@ -9,7 +9,6 @@ namespace ScanWorker.Services;
 public class ScanEventProcessorService(
     IScanEventClient scanEventClient,
     IEventProcessingStateRepository eventProcessingStateRepository,
-    IUserRepository userRepository,
     IParcelRepository parcelRepository,
     IScanEventRepository scanEventRepository,
     ILogger<ScanEventProcessorService> logger)
@@ -49,6 +48,8 @@ public class ScanEventProcessorService(
             {
                 await ProcessSingleEventAsync(scanEvent, ct);
                 lastProcessedEvent.LastProcessedEventId = scanEvent.EventId;
+                lastProcessedEvent.UpdatedAt = DateTime.UtcNow;
+                await eventProcessingStateRepository.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
@@ -56,9 +57,6 @@ public class ScanEventProcessorService(
                 break;
             }
         }
-
-        lastProcessedEvent.UpdatedAt = DateTime.UtcNow;
-        await eventProcessingStateRepository.SaveChangesAsync(ct);
         
         return true;
     }
@@ -66,33 +64,14 @@ public class ScanEventProcessorService(
     private async Task ProcessSingleEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
     {
 
-        // Step 1: Upsert User (no FK dependency)
-        await AddUserAsync(scanEvent.User, ct);
-
-        // Step 2: Upsert Parcel (depends on User)
+        // Step 1: Upsert Parcel (depends on User)
         await UpsertParcelAsync(scanEvent, ct);
 
-        // Step 3: Insert ScanEvent (depends on User and Parcel)
+        // Step 2: Insert ScanEvent (depends on User and Parcel)
         AddScanEvent(scanEvent);
 
         logger.LogDebug("Processed EventId {EventId} for ParcelId {ParcelId}",
             scanEvent.EventId, scanEvent.ParcelId);
-    }
-
-    private async Task AddUserAsync(ScanEventUserDto userDto, CancellationToken ct)
-    {
-        var userExists = await userRepository.ExistsByUserIdAsync(userDto.UserId, ct);
-
-        if (!userExists)
-        {
-            userRepository.Add(new User
-            {
-                UserId = userDto.UserId,
-                CarrierId = userDto.CarrierId ?? string.Empty
-            });
-            
-            logger.LogDebug("Created User {UserId}", userDto.UserId);
-        }
     }
 
     private async Task UpsertParcelAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
@@ -103,46 +82,17 @@ public class ScanEventProcessorService(
         {
             var parcel = new Parcel
             {
-                ParcelId = scanEvent.ParcelId,
-                LastEventId = scanEvent.EventId,
-                LastEventType = scanEvent.Type,
-                LastEventStatusCode = scanEvent.StatusCode,
-                LastEventCreatedDateTimeUtc = scanEvent.CreatedDateTimeUtc,
-                LastRunId = scanEvent.User.RunId,
-                UserId = scanEvent.User.UserId
+                ParcelId = scanEvent.ParcelId
             };
-
-            SetParcelTimestamps(parcel, scanEvent.Type, scanEvent.CreatedDateTimeUtc);
 
             parcelRepository.Add(parcel);
             logger.LogDebug("Created Parcel {ParcelId}", scanEvent.ParcelId);
         }
         else
         {
-            existingParcel.LastEventId = scanEvent.EventId;
-            existingParcel.LastEventType = scanEvent.Type;
-            existingParcel.LastEventStatusCode = scanEvent.StatusCode;
-            existingParcel.LastEventCreatedDateTimeUtc = scanEvent.CreatedDateTimeUtc;
-            existingParcel.LastRunId = scanEvent.User.RunId;
-            existingParcel.UserId = scanEvent.User.UserId;
             existingParcel.UpdatedAt = DateTime.UtcNow;
 
-            SetParcelTimestamps(existingParcel, scanEvent.Type, scanEvent.CreatedDateTimeUtc);
-
             logger.LogDebug("Updated Parcel {ParcelId}", scanEvent.ParcelId);
-        }
-    }
-
-    private static void SetParcelTimestamps(Parcel parcel, string eventType, DateTime createdDateTimeUtc)
-    {
-        switch (eventType.ToUpperInvariant())
-        {
-            case EventTypeConstants.Pickup:
-                parcel.PickupDateTimeUtc = createdDateTimeUtc;
-                break;
-            case EventTypeConstants.Delivery:
-                parcel.DeliveryDateTimeUtc = createdDateTimeUtc;
-                break;
         }
     }
 

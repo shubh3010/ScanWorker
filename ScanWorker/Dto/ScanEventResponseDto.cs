@@ -1,4 +1,4 @@
-namespace ScanWorker.Dtos;
+namespace ScanWorker.Dto;
 
 public record ScanEventResponseDto
 {

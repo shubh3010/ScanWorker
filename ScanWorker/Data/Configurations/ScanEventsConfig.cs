@@ -24,11 +24,5 @@ public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvent>
 
             builder.HasIndex(e => e.CreatedDateTimeUtc)
                 .HasDatabaseName("IX_ScanEvents_CreatedDateTimeUtc");
-
-            // Relationships
-            builder.HasOne(e => e.User)
-                .WithMany(u => u.ScanEvents)
-                .HasForeignKey(f => f.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
     }
 }

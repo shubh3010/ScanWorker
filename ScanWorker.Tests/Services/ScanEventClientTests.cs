@@ -3,7 +3,6 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ScanWorker.Dtos;
 using ScanWorker.Services;
 using ScanWorker.Tests.Helpers;
 
@@ -16,181 +15,200 @@ public class ScanEventClientTests
 
     private ScanEventClient CreateClient(MockHttpMessageHandler handler)
     {
-        var httpClient = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(BaseUrl)
-        };
-
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
         return new ScanEventClient(httpClient, _loggerMock.Object);
     }
 
-    private static List<ScanEventResponseDto> CreateSampleEvents()
-    {
-        return
-        [
-            new ScanEventResponseDto
-            {
-                EventId = 100,
-                ParcelId = 5002,
-                Type = "Pickup",
-                CreatedDateTimeUtc = DateTime.UtcNow,
-                Device = new ScanEventDeviceDto
+    // Builds a minimal valid API response matching the real shape: {"ScanEvents":[...]}
+    private static string SingleEventJson(long eventId = 100, int parcelId = 5002, string type = "PICKUP") => $$"""
+        {
+            "ScanEvents": [
                 {
-                    DeviceId = 103,
-                    DeviceTransactionId = "83269"
-                },
-                User = new ScanEventUserDto
-                {
-                    UserId = "NC1001",
-                    CarrierId = "NC",
-                    RunId = "100"
+                    "EventId": {{eventId}},
+                    "ParcelId": {{parcelId}},
+                    "Type": "{{type}}",
+                    "CreatedDateTimeUtc": "2026-02-21T00:00:00Z",
+                    "StatusCode": "",
+                    "Device": { "DeviceId": 103, "DeviceTransactionId": 83269 },
+                    "User": { "UserId": "NC1001", "CarrierId": "NC", "RunId": "100" }
                 }
-            }
-        ];
-    }
+            ]
+        }
+        """;
 
     [Fact]
     public async Task GetScanEventsAsync_ReturnsEvents_WhenApiReturnsValidResponse()
     {
-        // Arrange
-        var expectedEvents = CreateSampleEvents();
-        var handler = MockHttpMessageHandler.WithJsonResponse(expectedEvents);
+        var handler = MockHttpMessageHandler.WithRawJson(SingleEventJson());
         var client = CreateClient(handler);
 
-        // Act
         var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         result.Should().HaveCount(1);
         result[0].EventId.Should().Be(100);
         result[0].ParcelId.Should().Be(5002);
-        result[0].Type.Should().Be("Pickup");
+        result[0].Type.Should().Be("PICKUP");
         result[0].User.UserId.Should().Be("NC1001");
+    }
+
+    [Fact]
+    public async Task GetScanEventsAsync_MapsAllFields_Correctly()
+    {
+        var handler = MockHttpMessageHandler.WithRawJson(SingleEventJson());
+        var client = CreateClient(handler);
+
+        var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
+
+        var ev = result[0];
+        ev.EventId.Should().Be(100);
+        ev.ParcelId.Should().Be(5002);
+        ev.Type.Should().Be("PICKUP");
+        ev.Device.DeviceId.Should().Be(103);
+        ev.Device.DeviceTransactionId.Should().Be(83269);
+        ev.User.UserId.Should().Be("NC1001");
+        ev.User.CarrierId.Should().Be("NC");
+        ev.User.RunId.Should().Be("100");
     }
 
     [Fact]
     public async Task GetScanEventsAsync_ReturnsEmptyList_WhenApiReturnsNull()
     {
-        // Arrange
-        var handler = MockHttpMessageHandler.WithJsonResponse<List<ScanEventResponseDto>?>(null);
+        // "null" body — GetFromJsonAsync returns null, which the client maps to empty
+        var handler = MockHttpMessageHandler.WithRawJson("null");
         var client = CreateClient(handler);
 
-        // Act
         var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         result.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task GetScanEventsAsync_ReturnsEmptyList_WhenApiReturnsEmptyArray()
+    public async Task GetScanEventsAsync_ReturnsEmptyList_WhenScanEventsArrayIsEmpty()
     {
-        // Arrange
-        var handler = MockHttpMessageHandler.WithJsonResponse(new List<ScanEventResponseDto>());
+        var handler = MockHttpMessageHandler.WithRawJson("""{"ScanEvents":[]}""");
         var client = CreateClient(handler);
 
-        // Act
         var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         result.Should().BeEmpty();
     }
 
     [Fact]
     public async Task GetScanEventsAsync_ThrowsHttpRequestException_WhenApiReturns500()
     {
-        // Arrange
         var handler = MockHttpMessageHandler.WithStatusCode(HttpStatusCode.InternalServerError);
         var client = CreateClient(handler);
 
-        // Act
         var act = () => client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         await act.Should().ThrowAsync<HttpRequestException>();
     }
 
     [Fact]
     public async Task GetScanEventsAsync_ThrowsHttpRequestException_WhenApiReturns404()
     {
-        // Arrange
         var handler = MockHttpMessageHandler.WithStatusCode(HttpStatusCode.NotFound);
         var client = CreateClient(handler);
 
-        // Act
         var act = () => client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         await act.Should().ThrowAsync<HttpRequestException>();
     }
 
     [Fact]
     public async Task GetScanEventsAsync_ThrowsJsonException_WhenApiReturnsInvalidJson()
     {
-        // Arrange
         var handler = MockHttpMessageHandler.WithInvalidJson();
         var client = CreateClient(handler);
 
-        // Act
         var act = () => client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         await act.Should().ThrowAsync<JsonException>();
     }
 
     [Fact]
-    public async Task GetScanEventsAsync_SkipsMalformedEvent_AndReturnsValidOnes()
+    public async Task GetScanEventsAsync_SkipsMalformedEvent_AndReturnsRemainingValidOnes()
     {
-        // Arrange — one valid event, one malformed, one valid
+        // The middle element is missing all required fields, so Deserialize<ScanEventResponseDto>
+        // will throw JsonException — it should be skipped and the other two returned.
         var json = """
-        [
-            {
-                "EventId": 100,
-                "ParcelId": 5002,
-                "Type": "Pickup",
-                "CreatedDateTimeUtc": "2026-02-21T00:00:00Z",
-                "Device": { "DeviceId": 103, "DeviceTransactionId": "83269" },
-                "User": { "UserId": "NC1001", "CarrierId": "NC", "RunId": "100" }
-            },
-            {
-                "EventId": 101,
-                "bad_field": true
-            },
-            {
-                "EventId": 102,
-                "ParcelId": 5003,
-                "Type": "Delivery",
-                "CreatedDateTimeUtc": "2026-02-21T01:00:00Z",
-                "Device": { "DeviceId": 104, "DeviceTransactionId": "83270" },
-                "User": { "UserId": "NC1002", "CarrierId": "NC", "RunId": "101" }
-            }
-        ]
+        {
+            "ScanEvents": [
+                {
+                    "EventId": 100,
+                    "ParcelId": 5002,
+                    "Type": "PICKUP",
+                    "CreatedDateTimeUtc": "2026-02-21T00:00:00Z",
+                    "Device": { "DeviceId": 103, "DeviceTransactionId": 83269 },
+                    "User": { "UserId": "NC1001", "CarrierId": "NC", "RunId": "100" }
+                },
+                { "bad_field": true },
+                {
+                    "EventId": 102,
+                    "ParcelId": 5003,
+                    "Type": "DELIVERY",
+                    "CreatedDateTimeUtc": "2026-02-21T01:00:00Z",
+                    "Device": { "DeviceId": 104, "DeviceTransactionId": 83270 },
+                    "User": { "UserId": "NC1002", "CarrierId": "NC", "RunId": "101" }
+                }
+            ]
+        }
         """;
         var handler = MockHttpMessageHandler.WithRawJson(json);
         var client = CreateClient(handler);
 
-        // Act
         var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
 
-        // Assert
         result.Should().HaveCount(2);
         result[0].EventId.Should().Be(100);
         result[1].EventId.Should().Be(102);
     }
 
     [Fact]
+    public async Task GetScanEventsAsync_ReturnsAllValidEvents_WhenMultipleEventsReturned()
+    {
+        var json = """
+        {
+            "ScanEvents": [
+                {
+                    "EventId": 1, "ParcelId": 10, "Type": "PICKUP",
+                    "CreatedDateTimeUtc": "2026-02-21T00:00:00Z",
+                    "Device": { "DeviceId": 1, "DeviceTransactionId": 1 },
+                    "User": { "UserId": "U1", "CarrierId": "NC", "RunId": "1" }
+                },
+                {
+                    "EventId": 2, "ParcelId": 10, "Type": "STATUS",
+                    "CreatedDateTimeUtc": "2026-02-21T00:01:00Z",
+                    "Device": { "DeviceId": 1, "DeviceTransactionId": 2 },
+                    "User": { "UserId": "U1", "CarrierId": "NC", "RunId": "1" }
+                },
+                {
+                    "EventId": 3, "ParcelId": 10, "Type": "DELIVERY",
+                    "CreatedDateTimeUtc": "2026-02-21T00:02:00Z",
+                    "Device": { "DeviceId": 1, "DeviceTransactionId": 3 },
+                    "User": { "UserId": "U1", "CarrierId": "NC", "RunId": "1" }
+                }
+            ]
+        }
+        """;
+        var handler = MockHttpMessageHandler.WithRawJson(json);
+        var client = CreateClient(handler);
+
+        var result = await client.GetScanEventsAsync(1, 100, CancellationToken.None);
+
+        result.Should().HaveCount(3);
+    }
+
+    [Fact]
     public async Task GetScanEventsAsync_ThrowsOperationCanceledException_WhenCancelled()
     {
-        // Arrange
-        var handler = MockHttpMessageHandler.WithJsonResponse(CreateSampleEvents());
+        var handler = MockHttpMessageHandler.WithRawJson(SingleEventJson());
         var client = CreateClient(handler);
         var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        // Act
         var act = () => client.GetScanEventsAsync(1, 100, cts.Token);
 
-        // Assert
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 }

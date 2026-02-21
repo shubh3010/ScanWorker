@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ScanWorker.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -26,42 +26,16 @@ namespace ScanWorker.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CarrierId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.UserId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Parcels",
                 columns: table => new
                 {
                     ParcelId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    LastEventId = table.Column<long>(type: "bigint", nullable: false),
-                    LastEventType = table.Column<int>(type: "int", nullable: false),
-                    LastEventStatusCode = table.Column<int>(type: "int", nullable: true),
-                    LastEventCreatedDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LastRunId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    PickupDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeliveryDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Parcels", x => x.ParcelId);
-                    table.ForeignKey(
-                        name: "FK_Parcels_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserId");
                 });
 
             migrationBuilder.CreateTable(
@@ -71,13 +45,13 @@ namespace ScanWorker.Migrations
                     EventId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ParcelId = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<int>(type: "int", maxLength: 50, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    StatusCode = table.Column<int>(type: "int", nullable: true),
+                    StatusCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     RunId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    DeviceId = table.Column<int>(type: "int", nullable: true),
-                    DeviceTransactionId = table.Column<long>(type: "bigint", nullable: true),
+                    DeviceId = table.Column<int>(type: "int", nullable: false),
+                    DeviceTransactionId = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
@@ -88,17 +62,7 @@ namespace ScanWorker.Migrations
                         column: x => x.ParcelId,
                         principalTable: "Parcels",
                         principalColumn: "ParcelId");
-                    table.ForeignKey(
-                        name: "FK_ScanEvents_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserId");
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "do",
-                table: "Parcels",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ScanEvents_CreatedDateTimeUtc",
@@ -109,11 +73,6 @@ namespace ScanWorker.Migrations
                 name: "IX_ScanEvents_ParcelId",
                 table: "ScanEvents",
                 column: "ParcelId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ScanEvents_UserId",
-                table: "ScanEvents",
-                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -127,9 +86,6 @@ namespace ScanWorker.Migrations
 
             migrationBuilder.DropTable(
                 name: "Parcels");
-
-            migrationBuilder.DropTable(
-                name: "Users");
         }
     }
 }

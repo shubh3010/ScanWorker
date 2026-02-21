@@ -6,7 +6,7 @@ public class ScanEvent
 
     public int ParcelId { get; set; }
 
-    public string Type { get; set; }
+    public string Type { get; set; } = null!;
     
     public DateTime CreatedDateTimeUtc { get; set; }
     
@@ -18,12 +18,10 @@ public class ScanEvent
     
     public int DeviceId { get; set; }
     
-    public string? DeviceTransactionId { get; set; }
+    public int DeviceTransactionId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    // Navigation property
-    public virtual User? User { get; set; }
-    
+    // Navigation property    
     public virtual Parcel? Parcel { get; set; }
 }
