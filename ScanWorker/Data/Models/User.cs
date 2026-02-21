@@ -2,9 +2,9 @@
 
 public class User
 {
-    public string UserId { get; set; } = null!;
+    public string UserId { get; set; }
     
-    public string CarrierId { get; set; } = string.Empty;
+    public string? CarrierId { get; set; }
     
     public DateTime CreatedAt { get; set; }
     

@@ -4,7 +4,6 @@ using Repository;
 using ScanWorker.Configuration;
 using ScanWorker.Interface;
 using ScanWorker.Repository;
-using ScanWorker.Respository;
 using ScanWorker.Services;
 using ScanWorker.Worker;
 

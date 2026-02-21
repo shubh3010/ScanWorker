@@ -10,7 +10,6 @@ public class ParcelRepository(ScanWorkerContext context) : Repository<Parcel>(co
     {
         return await _dbSet
             .Where(p => p.ParcelId == parcelId)
-            .Include(p => p.User)
             .FirstOrDefaultAsync(ct);
     }
 }

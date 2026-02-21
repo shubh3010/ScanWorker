@@ -6,7 +6,7 @@ public class Parcel
 
     public long LastEventId { get; set; }
 
-    public string LastEventType { get; set; } = null!;
+    public string LastEventType { get; set; }
     
     public string? LastEventStatusCode { get; set; }
     
@@ -20,7 +20,7 @@ public class Parcel
     
     public DateTime UpdatedAt { get; set; }
     
-    public string UserId { get; set; } = null!;
+    public string UserId { get; set; }
     
     // Navigation property
     public virtual List<ScanEvent>? ScanEvents { get; set; }

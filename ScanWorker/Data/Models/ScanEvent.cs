@@ -6,7 +6,7 @@ public class ScanEvent
 
     public int ParcelId { get; set; }
 
-    public string Type { get; set; } = null!;
+    public string Type { get; set; }
     
     public DateTime CreatedDateTimeUtc { get; set; }
     

@@ -17,12 +17,6 @@ public class ScanEventProcessorService(
 {
     private const int BatchSize = 100;
 
-    private async Task<EventProcessingState> GetLastProcessedEventIdAsync(CancellationToken ct)
-    {
-        var state = await eventProcessingStateRepository.GetAsync(ct);
-        return state ?? new EventProcessingState();
-    }
-
     public async Task<bool> ProcessBatchAsync(CancellationToken ct = default)
     {
         var lastProcessedEvent = await GetLastProcessedEventIdAsync(ct);
@@ -79,7 +73,7 @@ public class ScanEventProcessorService(
         await UpsertParcelAsync(scanEvent, ct);
 
         // Step 3: Insert ScanEvent (depends on User and Parcel)
-        AddScanEvent(scanEvent, ct);
+        AddScanEvent(scanEvent);
 
         logger.LogDebug("Processed EventId {EventId} for ParcelId {ParcelId}",
             scanEvent.EventId, scanEvent.ParcelId);
@@ -152,7 +146,7 @@ public class ScanEventProcessorService(
         }
     }
 
-    private void AddScanEvent(ScanEventResponseDto scanEvent, CancellationToken ct)
+    private void AddScanEvent(ScanEventResponseDto scanEvent)
     {
         scanEventRepository.Add(new ScanEvent
         {
@@ -166,5 +160,20 @@ public class ScanEventProcessorService(
             DeviceId = scanEvent.Device.DeviceId,
             DeviceTransactionId = scanEvent.Device.DeviceTransactionId
         });
+    }
+
+    private async Task<EventProcessingState> GetLastProcessedEventIdAsync(CancellationToken ct)
+    {
+        var state = await eventProcessingStateRepository.GetAsync(ct);
+        if (state is null)
+        {
+            state = new EventProcessingState
+            {
+                LastProcessedEventId = 0,
+                UpdatedAt = DateTime.UtcNow
+            };
+            eventProcessingStateRepository.Add(state);
+        }
+        return state;
     }
 }

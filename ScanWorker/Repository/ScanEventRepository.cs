@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Repository;
 using ScanWorker.Data.Models;
-using ScanWorker.Repository;
 
-namespace ScanWorker.Respository;
+namespace ScanWorker.Repository;
 
 public class ScanEventRepository(ScanWorkerContext context) : Repository<ScanEvent>(context), IScanEventRepository
 {
