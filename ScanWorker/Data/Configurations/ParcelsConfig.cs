@@ -11,6 +11,7 @@ public class ParcelsConfig : IEntityTypeConfiguration<Parcel>
     {
         builder.ToTable("Parcels");
         builder.HasKey(p => p.ParcelId);
+        builder.Property(p => p.ParcelId).ValueGeneratedNever();
 
         builder.Property(p => p.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 

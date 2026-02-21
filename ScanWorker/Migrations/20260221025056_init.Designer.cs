@@ -12,7 +12,7 @@ using ScanWorker.Data;
 namespace ScanWorker.Migrations
 {
     [DbContext(typeof(ScanWorkerContext))]
-    [Migration("20260221022129_init")]
+    [Migration("20260221025056_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -49,10 +49,7 @@ namespace ScanWorker.Migrations
             modelBuilder.Entity("ScanWorker.Data.Models.Parcel", b =>
                 {
                     b.Property<int>("ParcelId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParcelId"));
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -67,10 +64,7 @@ namespace ScanWorker.Migrations
             modelBuilder.Entity("ScanWorker.Data.Models.ScanEvent", b =>
                 {
                     b.Property<long>("EventId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("EventId"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -99,8 +93,8 @@ namespace ScanWorker.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -114,6 +108,9 @@ namespace ScanWorker.Migrations
 
                     b.HasIndex("ParcelId")
                         .HasDatabaseName("IX_ScanEvents_ParcelId");
+
+                    b.HasIndex("ParcelId", "Type")
+                        .HasDatabaseName("IX_ScanEvents_ParcelId_Type");
 
                     b.ToTable("ScanEvents", (string)null);
                 });

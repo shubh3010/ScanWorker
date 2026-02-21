@@ -28,12 +28,12 @@ public class ScanEventProcessorService(
             return false;
         }
 
-        logger.LogInformation("Processing {Count} events starting from EventId {FromEventId}",
-            events.Count, lastProcessedEvent.LastProcessedEventId + 1);
+        logger.LogInformation("Processing {Count} events starting from EventId {FromEventId}", events.Count, lastProcessedEvent.LastProcessedEventId + 1);
 
         var orderedEvents = events.OrderBy(e => e.EventId).ToList();
+        var orderedEventIds = orderedEvents.Select(e => e.EventId).ToHashSet();
 
-        var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEvents.Select(e => e.EventId), ct);
+        var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEventIds, ct);
 
         foreach (var scanEvent in orderedEvents)
         {
@@ -83,6 +83,7 @@ public class ScanEventProcessorService(
             var parcel = new Parcel
             {
                 ParcelId = scanEvent.ParcelId
+                // can be extended with more properties if needed in the future like name, weight, etc. depending on what the scan event API provides
             };
 
             parcelRepository.Add(parcel);
@@ -123,6 +124,7 @@ public class ScanEventProcessorService(
                 UpdatedAt = DateTime.UtcNow
             };
             eventProcessingStateRepository.Add(state);
+            await eventProcessingStateRepository.SaveChangesAsync(ct);
         }
         return state;
     }

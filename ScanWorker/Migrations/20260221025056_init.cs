@@ -29,8 +29,7 @@ namespace ScanWorker.Migrations
                 name: "Parcels",
                 columns: table => new
                 {
-                    ParcelId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ParcelId = table.Column<int>(type: "int", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
@@ -42,10 +41,9 @@ namespace ScanWorker.Migrations
                 name: "ScanEvents",
                 columns: table => new
                 {
-                    EventId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EventId = table.Column<long>(type: "bigint", nullable: false),
                     ParcelId = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreatedDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StatusCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     RunId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
@@ -73,6 +71,11 @@ namespace ScanWorker.Migrations
                 name: "IX_ScanEvents_ParcelId",
                 table: "ScanEvents",
                 column: "ParcelId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScanEvents_ParcelId_Type",
+                table: "ScanEvents",
+                columns: new[] { "ParcelId", "Type" });
         }
 
         /// <inheritdoc />

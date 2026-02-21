@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ScanWorker.Constants;
 using ScanWorker.Data.Models;
@@ -11,6 +11,7 @@ public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvent>
     {
             builder.ToTable("ScanEvents");
             builder.HasKey(e => e.EventId);
+            builder.Property(e => e.EventId).ValueGeneratedNever();
             
             builder.Property(e => e.Type).IsRequired().HasMaxLength(DatabaseConstants.EventTypeMaxLength);
             builder.Property(e => e.StatusCode).HasMaxLength(DatabaseConstants.StatusCodeMaxLength);
@@ -24,5 +25,8 @@ public class ScanEventsConfig : IEntityTypeConfiguration<ScanEvent>
 
             builder.HasIndex(e => e.CreatedDateTimeUtc)
                 .HasDatabaseName("IX_ScanEvents_CreatedDateTimeUtc");
+
+            builder.HasIndex(e => new { e.ParcelId, e.Type })
+                .HasDatabaseName("IX_ScanEvents_ParcelId_Type");
     }
 }
