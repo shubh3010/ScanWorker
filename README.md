@@ -2,7 +2,7 @@
 
 ## Source Code
 
-The source code is available on GitHub: _[insert GitHub link here]_
+The source code is available on GitHub: https://github.com/shubh3010/ScanWorker
 
 ---
 
@@ -49,7 +49,13 @@ For local development, `appsettings.Development.json` overrides `BaseUrl` to poi
 
 ## Database Setup
 
-Run the EF Core migration to create the schema:
+First, install the EF Core CLI tool (if not already installed):
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+Then run the EF Core migration to create the schema:
 
 ```bash
 dotnet ef database update --project ScanWorker
@@ -111,3 +117,56 @@ dotnet test ScanWorker.Tests
 - **Metrics** — emit counters like events processed, duplicates skipped, deserialization failures, and batch duration. Something like OpenTelemetry or Prometheus so we can build dashboards and set alerts.
 - **Least-privilege DB access** — the SQL user currently has more access than it needs. In production it should only have the specific permissions required.
 - **Tests** — add unit tests for the event processing logic and integration tests that run against a test database to verify end-to-end functionality.
+
+---
+
+## Enabling Downstream Workers
+
+If another worker needed to act on the same scan events (e.g. send notifications, update analytics), the cleanest approach would be the **Transactional Outbox** pattern:
+
+1. Add an `OutboxEvents` table to the existing database.
+2. When `ScanEventProcessorService` saves a processed event, it also writes a row to the outbox table **in the same transaction** — so either both succeed or neither does.
+3. A separate hosted service (or a second worker) polls the outbox table, publishes each unpublished row to a message broker (RabbitMQ, Azure Service Bus, etc.), and marks it as published.
+4. Downstream workers subscribe to the broker and process events independently.
+
+### Why this approach
+
+- **No data loss** — the outbox write shares a transaction with the scan event write, so nothing slips through the cracks.
+- **Minimal change to this app** — just a new `DbSet<OutboxEvent>`, a few extra lines in the existing save path, and a small publisher service.
+- **Downstream independence** — each consumer has its own subscription/queue, so they can fail, restart, or scale without affecting ingestion or each other.
+
+### Trade-offs
+
+- **Extra DB load** — every processed event now results in two writes (ScanEvent + OutboxEvent) instead of one, and the publisher adds constant polling against the outbox table.
+- **Eventual consistency** — downstream workers don't see events instantly. There's a small delay between the event being saved and the publisher picking it up and pushing it to the broker.
+- **Outbox cleanup** — the outbox table grows over time. A scheduled job or retention policy is needed to prune old published rows.
+
+### What the overall system would look like
+
+```
+Scan Event API
+      │
+      ▼
+┌──────────────┐       ┌─────────────────────┐
+│  ScanWorker  │──TX──▶│  SQL Server          │
+│  (this app)  │       │  - ScanEvents        │
+│              │       │  - EventProcessing   │
+│              │──TX──▶│  - OutboxEvents      │
+└──────────────┘       └─────────┬────────────┘
+                                 │
+                       ┌─────────▼────────────┐
+                       │  Outbox Publisher     │
+                       │  (hosted service)     │
+                       └─────────┬────────────┘
+                                 │
+                       ┌─────────▼────────────┐
+                       │  Message Broker       │
+                       │  (RabbitMQ / ASB)     │
+                       └────┬────────────┬────┘
+                            │            │
+                  ┌─────────▼──┐  ┌──────▼─────────┐
+                  │ Worker A   │  │ Worker B        │
+                  │ (notify)   │  │ (analytics)     │
+                  └────────────┘  └────────────────┘
+```
+

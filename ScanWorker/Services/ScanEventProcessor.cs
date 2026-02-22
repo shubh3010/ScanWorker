@@ -1,4 +1,3 @@
-using ScanWorker.Constants;
 using ScanWorker.Data.Models;
 using ScanWorker.Dto;
 using ScanWorker.Interface;
