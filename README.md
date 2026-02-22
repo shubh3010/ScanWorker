@@ -93,17 +93,10 @@ dotnet test ScanWorker.Tests
 
 ## Assumptions
 
-### API Contract
+
 1. New event types and status codes can show up over time, so `Type` and `StatusCode` are stored as strings instead of enums.
-
-### Processing
-2. The worker can be stopped and started at any point, so it needs a persistent cursor. `LastProcessedEventId` is stored in an `EventProcessingState` table.
-
-### Storage
-3. A minimal `Parcel` table is used to anchor scan events. It only holds `ParcelId` and `UpdatedAt` for now, and can be extended later if the API provides more parcel-level data (e.g. name, weight).
-
-### Operational
-4. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
+2. A minimal `Parcel` table is used to anchor scan events. It only holds `ParcelId` and `UpdatedAt` for now, and can be extended later if the API provides more parcel-level data (e.g. name, weight).
+3. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
 
 ---
 
