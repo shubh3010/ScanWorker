@@ -100,12 +100,10 @@ dotnet test ScanWorker.Tests
 2. The worker can be stopped and started at any point, so it needs a persistent cursor. `LastProcessedEventId` is stored in an `EventProcessingState` table.
 
 ### Storage
-3. `EventId` is globally unique and works well as the primary key for stored scan events.
-4. Storing the raw scan events is enough to answer the required queries later (latest event per parcel, pickup/delivery times) without duplicating those values onto the Parcel row.
-5. Creating a dedicated Parcel table was over-engineering for this exercise, so `ParcelId` is stored as a string on the ScanEvent record. A Parcel table can always be expanded later if more info about each parcel is needed.
+3. A minimal `Parcel` table is used to anchor scan events. It only holds `ParcelId` and `UpdatedAt` for now, and can be extended later if the API provides more parcel-level data (e.g. name, weight).
 
 ### Operational
-6. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
+4. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
 
 ---
 
@@ -117,6 +115,12 @@ dotnet test ScanWorker.Tests
 - **Metrics** — emit counters like events processed, duplicates skipped, deserialization failures, and batch duration. Something like OpenTelemetry or Prometheus so we can build dashboards and set alerts.
 - **Least-privilege DB access** — the SQL user currently has more access than it needs. In production it should only have the specific permissions required.
 - **Tests** — add unit tests for the event processing logic and integration tests that run against a test database to verify end-to-end functionality.
+
+---
+
+## AI Usage
+
+See [AI-USAGE.md](./AI-USAGE.md) for a full disclosure of where AI tools were used during development.
 
 ---
 

@@ -18,6 +18,7 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
         {
             try
             {
+                // New scope per iteration to avoid a long-lived scoped service inside a singleton
                 using var scope = serviceProvider.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<IScanEventProcessor>();
 
@@ -28,10 +29,12 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
                     logger.LogInformation("Batch processed successfully");
                 }
 
+                // Reset on success so transient errors don't accumulate across batches
                 ResetRetryCount();
 
                 if (!hasWork)
                 {
+                    // No events available — back off before polling again
                     logger.LogDebug("No new scan events found. Waiting {Delay}s before next poll", BaseDelaySeconds);
                     await Task.Delay(TimeSpan.FromSeconds(BaseDelaySeconds), stoppingToken);
                 }
@@ -42,6 +45,7 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
             }
             catch (Exception ex)
             {
+                // Retry with exponential backoff; stop the worker if max retries exceeded
                 if (!await HandleRetryAsync(ex, stoppingToken))
                     break;
             }
@@ -60,6 +64,7 @@ public class ScanEventWorker(IServiceProvider serviceProvider, ILogger<ScanEvent
             return false;
         }
 
+        // Exponential backoff: 5s, 10s, 20s
         var delay = TimeSpan.FromSeconds(BaseDelaySeconds * Math.Pow(2, _retryCount - 1));
 
         logger.LogError(ex, "Retry {RetryCount}/{MaxRetry} in {Delay}s",
