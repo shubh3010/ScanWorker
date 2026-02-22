@@ -1,3 +1,12 @@
+/*
+I have used AI assistance to generate this test class for ScanEventWorker. The tests cover the following scenarios:
+1. Verify that the worker calls the processor's ProcessBatchAsync method when started.
+2. Ensure that the worker stops gracefully when cancellation is requested.
+3. Confirm that exceptions thrown by the processor do not propagate and cause the worker to crash.
+4. Check that the worker retries processing after a transient failure and eventually succeeds.
+5. Validate that the retry count is reset after a successful batch processing.
+*/
+
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

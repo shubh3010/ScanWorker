@@ -1,3 +1,21 @@
+/* I have used AI assistance to generate this test class for ScanEventProcessorService. The tests cover the following scenarios:
+1. Verify that ProcessBatchAsync returns false when the client returns no events.
+2. Ensure that ProcessBatchAsync queries the client starting from the last processed event ID plus one.
+3. Confirm that ProcessBatchAsync returns true when events are present.
+4. Check that ProcessBatchAsync creates a new Parcel when the parcel does not exist.
+5. Validate that ProcessBatchAsync updates an existing Parcel when the parcel already exists.
+6. Verify that ProcessBatchAsync adds a new ScanEvent to the repository.
+7. Ensure that ProcessBatchAsync persists pickup and delivery timestamps correctly in ScanEvents.
+8. Confirm that ProcessBatchAsync handles unknown event types without throwing exceptions.
+9. Check that ProcessBatchAsync skips duplicate events that are already in the database.
+10. Validate that ProcessBatchAsync processes non-duplicate events when the batch contains a mix of duplicates and new events.
+11. Verify that ProcessBatchAsync initializes the state when none exists.
+12. Ensure that ProcessBatchAsync saves the state after each successful event processing.
+13. Confirm that ProcessBatchAsync advances the last processed event ID correctly, even for duplicates.
+14. Check that ProcessBatchAsync stops processing and returns true when an exception is thrown during event processing.
+15. Validate that ProcessBatchAsync does not throw exceptions when the client throws an exception.
+*/
+
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
