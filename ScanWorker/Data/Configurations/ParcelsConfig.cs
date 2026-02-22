@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ScanWorker.Constants;
 using ScanWorker.Data.Models;
 
 namespace ScanWorker.Data.Configurations;

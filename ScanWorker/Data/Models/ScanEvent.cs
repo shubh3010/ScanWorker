@@ -22,6 +22,6 @@ public class ScanEvent
 
     public DateTime CreatedAt { get; set; }
 
-    // Navigation property    
+    // Navigation property
     public virtual Parcel? Parcel { get; set; }
 }
