@@ -50,12 +50,12 @@ public class ScanEventProcessorService(
                 await ProcessSingleEventAsync(scanEvent, ct);
                 lastProcessedEvent.LastProcessedEventId = scanEvent.EventId;
                 lastProcessedEvent.UpdatedAt = DateTime.UtcNow;
-                // Persist cursor after each event so progress is not lost on failure
+                // All repositories share the same scoped DbContext, so this single SaveChangesAsync
+                // persists all the changes in one implicit transaction.
                 await eventProcessingStateRepository.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
-                // Stop the batch at the first failure to preserve event ordering
                 logger.LogError(ex, "Failed to process EventId {EventId} — stopping batch at this point", scanEvent.EventId);
                 break;
             }

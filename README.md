@@ -95,8 +95,9 @@ dotnet test ScanWorker.Tests
 
 
 1. New event types and status codes can show up over time, so `Type` and `StatusCode` are stored as strings instead of enums.
-2. A minimal `Parcel` table is used to anchor scan events. It only holds `ParcelId` and `UpdatedAt` for now, and can be extended later if the API provides more parcel-level data (e.g. name, weight).
-3. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
+2. Pickup and delivery times are derived by querying `ScanEvents WHERE ParcelId = X AND Type IN ('PICKUP', 'DELIVERY')` rather than stored as explicit columns on the `Parcel` table. A parcel can have multiple pickup or delivery scans (e.g. a failed delivery followed by a successful one), so denormalizing a single timestamp onto Parcel would lose that history. The composite index `IX_ScanEvents_ParcelId_Type` keeps these lookups fast.
+3. A minimal `Parcel` table is used to anchor scan events. It only holds `ParcelId` and `UpdatedAt` for now, and can be extended later if the API provides more parcel-level data (e.g. name, weight).
+4. This is a dev/exercise setup, so `appsettings.json` is used for the API base URL and DB connection string.
 
 ---
 
