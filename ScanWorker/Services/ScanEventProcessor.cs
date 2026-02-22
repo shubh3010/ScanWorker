@@ -19,6 +19,7 @@ public class ScanEventProcessorService(
     {
         var lastProcessedEvent = await GetLastProcessedEventIdAsync(ct);
         
+        // Fetch next batch starting from the event after the last processed one
         var events = await scanEventClient.GetScanEventsAsync(lastProcessedEvent.LastProcessedEventId + 1, BatchSize, ct);
 
         if (events.Count == 0)
@@ -30,12 +31,13 @@ public class ScanEventProcessorService(
         logger.LogInformation("Processing {Count} events starting from EventId {FromEventId}", events.Count, lastProcessedEvent.LastProcessedEventId + 1);
 
         var orderedEvents = events.OrderBy(e => e.EventId).ToList();
-        var orderedEventIds = orderedEvents.Select(e => e.EventId).ToHashSet();
 
-        var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEventIds, ct);
+        // Pre-fetch existing event IDs in bulk to avoid per-event DB lookups
+        var existingEventIds = await scanEventRepository.GetExistingEventIdsAsync(orderedEvents.Select(e => e.EventId).ToHashSet(), ct);
 
         foreach (var scanEvent in orderedEvents)
         {
+            // Advance cursor even for duplicates so we don't re-fetch them next batch
             if (existingEventIds.Contains(scanEvent.EventId))
             {
                 logger.LogDebug("Skipping duplicate EventId {EventId} — already processed", scanEvent.EventId);
@@ -48,10 +50,12 @@ public class ScanEventProcessorService(
                 await ProcessSingleEventAsync(scanEvent, ct);
                 lastProcessedEvent.LastProcessedEventId = scanEvent.EventId;
                 lastProcessedEvent.UpdatedAt = DateTime.UtcNow;
+                // Persist cursor after each event so progress is not lost on failure
                 await eventProcessingStateRepository.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
+                // Stop the batch at the first failure to preserve event ordering
                 logger.LogError(ex, "Failed to process EventId {EventId} — stopping batch at this point", scanEvent.EventId);
                 break;
             }
@@ -62,11 +66,7 @@ public class ScanEventProcessorService(
 
     private async Task ProcessSingleEventAsync(ScanEventResponseDto scanEvent, CancellationToken ct)
     {
-
-        // Step 1: Upsert Parcel (depends on User)
         await UpsertParcelAsync(scanEvent, ct);
-
-        // Step 2: Insert ScanEvent (depends on User and Parcel)
         AddScanEvent(scanEvent);
 
         logger.LogDebug("Processed EventId {EventId} for ParcelId {ParcelId}",
@@ -82,7 +82,7 @@ public class ScanEventProcessorService(
             var parcel = new Parcel
             {
                 ParcelId = scanEvent.ParcelId
-                // can be extended with more properties if needed in the future like name, weight, etc. depending on what the scan event API provides
+                // can be extended with more parcel properties if the API provides them in future
             };
 
             parcelRepository.Add(parcel);
@@ -117,6 +117,7 @@ public class ScanEventProcessorService(
         var state = await eventProcessingStateRepository.GetAsync(ct);
         if (state is null)
         {
+            // First run — seed the cursor starting from the beginning
             state = new EventProcessingState
             {
                 LastProcessedEventId = 0,
